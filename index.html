@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Real People, Real Talk – Roulette</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto:wght@400;700&display=swap">
+<style>
+:root{--bg:#fff;--fg:#111;--muted:#555;--card:#f6f6f6;--line:#e2e2e2;--story:#F2552C;--world:#14A39A;--people:#2F6FB5;--future:#8E4A9E;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121212;--fg:#f4f4f4;--muted:#aaa;--card:#1d1d1d;--line:#333}}
+:root[data-theme="dark"]{--bg:#121212;--fg:#f4f4f4;--muted:#aaa;--card:#1d1d1d;--line:#333}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Roboto',system-ui,sans-serif;text-align:center;padding:20px 16px 40px}
+h1{font-family:'Anton',Impact,sans-serif;font-weight:400;text-transform:uppercase;font-size:clamp(30px,8vw,48px);line-height:1.05;margin:8px 0 6px}
+.sub{color:var(--muted);margin:0 auto 18px;max-width:420px;font-size:15px}
+.tag{font-weight:700;font-size:13px;letter-spacing:.02em;margin-top:26px}.tag span{color:var(--story)}
+.wrap{position:relative;width:min(88vw,380px);margin:0 auto}
+canvas{width:100%;height:auto;display:block;transition:transform 4.2s cubic-bezier(.12,.7,.1,1)}
+.pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:28px solid var(--fg);z-index:2}
+.hub{position:absolute;top:50%;left:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:var(--bg);border:3px solid var(--fg);font-family:'Anton',Impact,sans-serif;font-size:clamp(14px,4vw,20px);color:var(--fg);cursor:pointer;z-index:2;padding:0}
+.hub:disabled{opacity:.6;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:20px 0 4px}
+.chip{border:2px solid var(--c);color:var(--fg);background:transparent;border-radius:999px;padding:7px 14px;font:700 13px 'Roboto',sans-serif;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--c);color:#fff}
+.card{max-width:520px;margin:26px auto 0;background:var(--card);border:1px solid var(--line);border-left:8px solid var(--c,var(--line));border-radius:14px;padding:20px 20px 18px;text-align:left;min-height:150px}
+.cat{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--c,var(--muted))}
+.q{font-family:'Anton',Impact,sans-serif;font-size:clamp(22px,6vw,30px);line-height:1.2;text-transform:uppercase;margin:10px 0 0}
+.q.empty{font-family:'Roboto',sans-serif;text-transform:none;font-size:16px;color:var(--muted)}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.btn{border:2px solid var(--fg);background:transparent;color:var(--fg);border-radius:10px;padding:8px 14px;font:700 14px 'Roboto',sans-serif;cursor:pointer}
+.btn.main{background:var(--fg);color:var(--bg)}
+.count{color:var(--muted);font-size:13px;margin-top:10px}
+textarea.ans-box{width:100%;margin-top:16px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:16px/1.4 'Roboto',sans-serif;padding:10px 12px;resize:vertical;min-height:100px}
+textarea.ans-box:focus{outline:none;border-color:var(--c,var(--fg))}
+.answers{max-width:520px;margin:34px auto 0;text-align:left}
+.answers h2{font-family:'Anton',Impact,sans-serif;font-weight:400;text-transform:uppercase;font-size:26px;margin:0 0 4px}
+.note{color:var(--muted);font-size:13px;margin:0 0 10px}
+.ans{border-left:6px solid var(--c,var(--line));background:var(--card);border-radius:10px;padding:12px 14px;margin-top:12px}
+.aq{font-weight:700;margin:6px 0 6px;font-size:14px}
+.at{white-space:pre-wrap;font-size:15px;line-height:1.45}
+</style>
+<script data-goatcounter="https://purity.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<h1>Real People,<br>Real Talk</h1>
+<p class="sub">Spin the wheel, get a question, and take turns answering honestly. There are no wrong answers, and anyone can pass.</p>
+
+<div class="wrap">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="600" height="600" aria-label="Category wheel"></canvas>
+  <button class="hub" id="spin" type="button">SPIN</button>
+</div>
+
+<div class="chips" id="chips" role="group" aria-label="Choose categories"></div>
+
+<div class="card" id="card" aria-live="polite">
+  <div class="cat">Ready?</div>
+  <p class="q empty">Press SPIN to land on a category and get your first question.</p>
+</div>
+<div class="count" id="count"></div>
+<div class="answers" id="answers" style="display:none">
+  <h2>My answers</h2>
+  <p class="note">Saved only in this browser, on this device. Nobody else can see them.</p>
+  <div class="actions"><button class="btn" id="copyAll" type="button">Copy all answers</button><button class="btn" id="clearAll" type="button">Clear all</button></div>
+  <div id="alist"></div>
+</div>
+<p class="note" style="max-width:520px;margin:26px auto 0">Visits and spins are counted anonymously, with no cookies. Your written answers never leave your device.</p>
+<div class="tag">#REAL<span>PEOPLE</span>REALTALK</div>
+
+<script>
+var CATS=[
+{k:'story',name:'Your Story',color:'#F2552C',qs:[
+"What does a good day feel like for you, and when did you last have one?",
+"What was a moment in your life when you felt truly supported? What made it possible?",
+"What is a piece of advice that has stayed with you?",
+"Does the place where you live affect how you feel? In what way?",
+"What did you learn about mental health growing up – and what do you wish you had learned?",
+"What was a time when you felt like you truly belonged somewhere? What was that like?",
+"What is something you carry quietly that many people around you might not know about?",
+"Was there a time you asked for help or wanted to? What made you do it – or stop you from doing it?",
+"What is one thing you are grateful for right now?",
+"If your emotions today were the weather, what would they look like?"]},
+{k:'world',name:'Your World',color:'#14A39A',qs:[
+"What is one thing the world gets wrong about young people’s mental health?",
+"Is your school, workplace or neighbourhood supporting your well-being? How could these spaces be improved to promote mental health and well-being?",
+"Does your government treat your mental health as a priority? How can you tell?",
+"How do online activities affect how you feel?",
+"Has climate change ever made you feel anxious, hopeless or overwhelmed? How so?",
+"If mental health support was truly free and easy to access, what would you do first?",
+"What system – education, work, housing, something else – has affected your well-being the most? How so?",
+"Do you feel safe where you live? What would make you feel safer?",
+"What does “decent work” mean to you – and do you have it?",
+"Is there something happening in the world right now that is affecting your mental health?"]},
+{k:'people',name:'Your People',color:'#2F6FB5',qs:[
+"Who is the person you can always call, no matter what? Do they know that?",
+"What does care look like in your community – and who tends to give it? Who tends to receive it?",
+"Have you ever supported someone through a mental health struggle? What did you learn?",
+"Is there someone in your life you are worried about but have not said anything to yet? If so, what has kept you from speaking to them?",
+"What is a compliment you’ll never forget?",
+"Do the people around you talk openly about how they are really feeling?",
+"Who taught you what it means to take care of yourself? What did they show you?",
+"Have you ever felt alone in a room full of people? What was happening at the time?",
+"What would it mean for your community to truly have a “culture of care”? What could this look like in practice?",
+"Who is someone in your life that can always make you feel better?"]},
+{k:'future',name:'Your Future',color:'#8E4A9E',qs:[
+"What would a world that genuinely prioritized young people’s well-being look like to you?",
+"What gives you hope right now – even a small thing?",
+"If you could change one thing about how your country or community handles mental health, what would it be?",
+"What is one thing you’re still figuring out?",
+"Is there something, like a hobby or activity, you have stopped doing that you know would be good for you? What would it take to start again?",
+"What would you tell your younger self about getting through hard times? What have you learned over time?",
+"What’s one thing your younger self would be excited to know about your life today?",
+"If mental health were taught in every school in the world, what would be the first lesson you would want in the curriculum?",
+"What does a fair world look like to you – and how far are we from it?",
+"What is one small act of care you could offer someone right now?"]}
+];
+var active=[true,true,true,true], used=CATS.map(function(){return []}), rot=0, spinning=false, current='';
+var cv=document.getElementById('wheel'), ctx=cv.getContext('2d');
+
+function drawWheel(){
+  var n=CATS.length, a=2*Math.PI/n, c=300;
+  ctx.clearRect(0,0,600,600);
+  for(var i=0;i<n;i++){
+    var s=-Math.PI/2+i*a-a/2+a/2-a/2; // slice i spans [i*a - 90deg, (i+1)*a - 90deg]
+    s=-Math.PI/2+i*a;
+    ctx.beginPath();ctx.moveTo(c,c);ctx.arc(c,c,c-4,s,s+a);ctx.closePath();
+    ctx.fillStyle=active[i]?CATS[i].color:'#888';ctx.globalAlpha=active[i]?1:.35;ctx.fill();ctx.globalAlpha=1;
+    ctx.lineWidth=4;ctx.strokeStyle='#fff';ctx.stroke();
+    ctx.save();ctx.translate(c,c);ctx.rotate(s+a/2);ctx.textAlign='right';ctx.fillStyle='#fff';
+    ctx.font='44px Anton, Impact, sans-serif';
+    var words=CATS[i].name.toUpperCase().split(' ');
+    ctx.fillText(words[0],c-48,-4);ctx.fillText(words[1],c-48,40);
+    ctx.restore();
+  }
+  ctx.beginPath();ctx.arc(c,c,c-3,0,2*Math.PI);ctx.lineWidth=6;ctx.strokeStyle='#111';ctx.stroke();
+}
+
+function buildChips(){
+  var box=document.getElementById('chips');box.innerHTML='';
+  CATS.forEach(function(cat,i){
+    var b=document.createElement('button');b.className='chip';b.type='button';b.style.setProperty('--c',cat.color);
+    b.textContent=cat.name;b.setAttribute('aria-pressed',active[i]);
+    b.onclick=function(){
+      var on=active.filter(Boolean).length;
+      if(active[i]&&on===1)return;
+      active[i]=!active[i];b.setAttribute('aria-pressed',active[i]);drawWheel();updateCount();
+    };
+    box.appendChild(b);
+  });
+}
+
+function pickCategory(){
+  var ids=[];active.forEach(function(v,i){if(v)ids.push(i)});
+  return ids[Math.floor(Math.random()*ids.length)];
+}
+
+function pickQuestion(i){
+  var all=CATS[i].qs.map(function(_,j){return j});
+  var left=all.filter(function(j){return used[i].indexOf(j)<0});
+  if(!left.length){used[i]=[];left=all;}
+  var j=left[Math.floor(Math.random()*left.length)];
+  used[i].push(j);return CATS[i].qs[j];
+}
+
+function updateCount(){
+  var total=0,seen=0;
+  CATS.forEach(function(c,i){if(active[i]){total+=c.qs.length;seen+=used[i].length}});
+  document.getElementById('count').textContent=seen+' of '+total+' questions asked';
+}
+
+function showCard(i,q){
+  current=CATS[i].name.toUpperCase()+': '+q;
+  var card=document.getElementById('card');
+  card.style.setProperty('--c',CATS[i].color);
+  card.innerHTML='';
+  var cat=document.createElement('div');cat.className='cat';cat.textContent=CATS[i].name;
+  var p=document.createElement('p');p.className='q';p.textContent=q;
+  var act=document.createElement('div');act.className='actions';
+  var again=document.createElement('button');again.className='btn main';again.type='button';again.textContent='Spin again';again.onclick=spin;
+  var skip=document.createElement('button');skip.className='btn';skip.type='button';skip.textContent='Another from this category';
+  skip.onclick=function(){showCard(i,pickQuestion(i));updateCount();};
+  var copy=document.createElement('button');copy.className='btn';copy.type='button';copy.textContent='Copy question';
+  copy.onclick=function(){
+    try{navigator.clipboard.writeText(q+' #RealPeopleRealTalk').then(function(){copy.textContent='Copied!';setTimeout(function(){copy.textContent='Copy question'},1500)})}catch(e){}
+  };
+  act.appendChild(again);act.appendChild(skip);act.appendChild(copy);
+  var ta=document.createElement('textarea');ta.className='ans-box';ta.rows=4;ta.placeholder='Write your answer here…';ta.setAttribute('aria-label','Your answer');
+  var sv=document.createElement('button');sv.className='btn';sv.type='button';sv.textContent='Save my answer';
+  sv.onclick=function(){
+    var t=ta.value.trim();if(!t)return;
+    answers.push({cat:CATS[i].name,q:q,a:t,color:CATS[i].color});persist();renderAnswers();
+    ta.value='';sv.textContent='Saved ✓';setTimeout(function(){sv.textContent='Save my answer'},1500);
+  };
+  card.appendChild(cat);card.appendChild(p);card.appendChild(ta);
+  var row=document.createElement('div');row.className='actions';row.appendChild(sv);card.appendChild(row);card.appendChild(act);
+}
+
+function spin(){
+  if(spinning)return;spinning=true;
+  var btn=document.getElementById('spin');btn.disabled=true;
+  var i=pickCategory(), a=360/CATS.length;
+  try{if(window.goatcounter&&window.goatcounter.count){window.goatcounter.count({path:'spin-'+CATS[i].k,title:'Wheel spin: '+CATS[i].name,event:true})}}catch(e){}
+  var center=i*a+a/2, jitter=(Math.random()-.5)*(a*.7);
+  var cur=((rot%360)+360)%360;
+  var target=(360-center+jitter+360)%360;
+  var delta=(target-cur+360)%360+360*5;
+  rot+=delta;
+  cv.style.transform='rotate('+rot+'deg)';
+  setTimeout(function(){
+    spinning=false;btn.disabled=false;
+    showCard(i,pickQuestion(i));updateCount();
+    document.getElementById('card').scrollIntoView({behavior:'smooth',block:'nearest'});
+  },4300);
+}
+
+var answers=[];
+try{answers=JSON.parse(localStorage.getItem('rprt_answers')||'[]')}catch(e){answers=[]}
+function persist(){try{localStorage.setItem('rprt_answers',JSON.stringify(answers))}catch(e){}}
+function renderAnswers(){
+  var box=document.getElementById('answers'),list=document.getElementById('alist');
+  list.innerHTML='';box.style.display=answers.length?'block':'none';
+  answers.slice().reverse().forEach(function(x){
+    var d=document.createElement('div');d.className='ans';d.style.setProperty('--c',x.color);
+    var c=document.createElement('div');c.className='cat';c.textContent=x.cat;
+    var q=document.createElement('div');q.className='aq';q.textContent=x.q;
+    var a=document.createElement('div');a.className='at';a.textContent=x.a;
+    d.appendChild(c);d.appendChild(q);d.appendChild(a);list.appendChild(d);
+  });
+}
+document.getElementById('copyAll').onclick=function(){
+  var b=this,txt=answers.map(function(x){return x.cat.toUpperCase()+': '+x.q+'\n'+x.a}).join('\n\n');
+  try{navigator.clipboard.writeText(txt).then(function(){b.textContent='Copied!';setTimeout(function(){b.textContent='Copy all answers'},1500)})}catch(e){}
+};
+var armed=false;
+document.getElementById('clearAll').onclick=function(){
+  var b=this;
+  if(!armed){armed=true;b.textContent='Tap again to confirm';setTimeout(function(){armed=false;b.textContent='Clear all'},3000);return}
+  answers=[];persist();renderAnswers();armed=false;b.textContent='Clear all';
+};
+renderAnswers();
+document.getElementById('spin').onclick=spin;
+drawWheel();buildChips();updateCount();
+if(document.fonts&&document.fonts.ready){document.fonts.ready.then(drawWheel)}
+</script>
+</body>
+</html>
